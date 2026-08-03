@@ -1,0 +1,48 @@
+{
+	"Name": "World Clock",
+	"Version": "0.1.0.0",
+	"Author": "Rohan",
+	"Actions": [
+		{
+			"Name": "World Clock",
+			"UUID": "com.rohan.worldclock.clock",
+			"Icon": "imgs/actions/world-clock/icon",
+			"Tooltip": "A live digital clock for any city in the world.",
+			"PropertyInspectorPath": "ui/world-clock.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"UserTitleEnabled": false,
+			"States": [
+				{
+					"Image": "imgs/actions/world-clock/key",
+					"TitleAlignment": "middle"
+				}
+			]
+		}
+	],
+	"Category": "World Clock",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "Beautiful, minimal digital clocks for any timezone. Add a key per city and watch them tick in real time.",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 3,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "24",
+		"Debug": "enabled"
+	},
+	"UUID": "com.rohan.worldclock"
+}

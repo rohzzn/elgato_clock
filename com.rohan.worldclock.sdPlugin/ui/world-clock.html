@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <title>World Clock Settings</title>
+    <meta charset="utf-8" />
+    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+    <style>
+        .sdpi-hint {
+            color: #969696;
+            font-size: 9pt;
+            margin: 12px 4px 0 0;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <sdpi-item label="Timezone">
+        <sdpi-select id="timezone" setting="timezone"></sdpi-select>
+    </sdpi-item>
+
+    <sdpi-item label="Label">
+        <sdpi-textfield setting="label" placeholder="City name" maxlength="20"></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Accent">
+        <sdpi-color setting="accentColor" default="#ff9f45"></sdpi-color>
+    </sdpi-item>
+
+    <sdpi-item label="Hour format">
+        <sdpi-select setting="hourFormat" default="24">
+            <option value="24">24-hour</option>
+            <option value="12">12-hour</option>
+        </sdpi-select>
+    </sdpi-item>
+
+    <sdpi-item label="Style">
+        <sdpi-select setting="style" default="minimal">
+            <option value="minimal">Minimal</option>
+            <option value="seconds">With seconds</option>
+        </sdpi-select>
+    </sdpi-item>
+
+    <p class="sdpi-hint">Press the key to toggle the seconds readout.</p>
+
+    <!--
+        The zone list is built at runtime from Intl rather than hardcoded, so it stays correct as the
+        IANA database changes.
+
+        Ordering matters: <sdpi-select> picks up its <option> children through an internal
+        MutationObserver, which is only attached once the custom element has been upgraded. Options
+        that are already in place at upgrade time are never seen. So sdpi-components.js is loaded
+        first (in <head>) and this script runs last, mutating an element that is already live.
+    -->
+    <script>
+        (() => {
+            /** Zones to fall back on if the runtime predates `Intl.supportedValuesOf`. */
+            const FALLBACK = [
+                "America/Los_Angeles", "America/New_York", "America/Sao_Paulo", "Europe/London",
+                "Europe/Berlin", "Europe/Moscow", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai",
+                "Asia/Tokyo", "Australia/Sydney", "UTC",
+            ];
+
+            /** Regions worth putting first; everything else follows alphabetically. */
+            const REGION_ORDER = ["America", "Europe", "Asia", "Africa", "Australia", "Pacific"];
+
+            /** `America/Argentina/Buenos_Aires` -> `Argentina · Buenos Aires`. */
+            const humanize = (zone) => {
+                const slash = zone.indexOf("/");
+                return (slash === -1 ? zone : zone.slice(slash + 1)).replace(/_/g, " ").replace(/\//g, " · ");
+            };
+
+            /** `America/New_York` -> `America`; zones with no region (`UTC`) are grouped as Other. */
+            const regionOf = (zone) => {
+                const slash = zone.indexOf("/");
+                return slash === -1 ? "Other" : zone.slice(0, slash);
+            };
+
+            const escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+            const zones = typeof Intl.supportedValuesOf === "function"
+                ? Intl.supportedValuesOf("timeZone")
+                : FALLBACK;
+
+            const groups = new Map();
+            for (const zone of zones) {
+                const region = regionOf(zone);
+                let members = groups.get(region);
+                if (members === undefined) {
+                    members = [];
+                    groups.set(region, members);
+                }
+                members.push(zone);
+            }
+
+            const rank = (region) => {
+                const index = REGION_ORDER.indexOf(region);
+                return index === -1 ? REGION_ORDER.length : index;
+            };
+
+            const select = document.getElementById("timezone");
+
+            // A key with no timezone yet renders in the machine's own zone, so preselect that rather
+            // than leaving the dropdown blank and disagreeing with what the key already shows.
+            select.setAttribute("default", Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+
+            select.innerHTML = [...groups.entries()]
+                .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+                .map(([region, members]) => {
+                    const options = members
+                        .sort((a, b) => humanize(a).localeCompare(humanize(b)))
+                        .map((zone) => `<option value="${escape(zone)}">${escape(humanize(zone))}</option>`)
+                        .join("");
+
+                    return `<optgroup label="${escape(region)}">${options}</optgroup>`;
+                })
+                .join("");
+        })();
+    </script>
+</body>
+
+</html>
